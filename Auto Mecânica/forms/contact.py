@@ -1,26 +1,37 @@
-from django.shortcuts import redirect
+from django.shortcuts import render, redirect
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-if request.method == 'POST':
-    name = request.POST['name']
-    email = request.POST['email']
-    phone = request.POST['phone']
-    message = request.POST['message']
+def send_email(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        email = request.POST['email']
+        subject = request.POST['subject']
+        message = request.POST['message']
 
-    to = 'vitinls387@gmail.com'
-    subject = 'Orçamento de serviço pelo site'
-    body = f"Nome: {name}\n\nEmail: {email}\n\nTelefone: {phone}\n\nMensagem: {message}"
-    headers = f"De: {email}\r\n"
+        to = 'vitinls387@gmail.com'
 
-    try:
-        smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-        smtp_server.ehlo()
-        smtp_server.starttls()
-        smtp_server.login('vitinls387@gmail.com', 'Vls3199jmv')
-        smtp_server.sendmail(email, to, body)
-        smtp_server.close()
-        print('Sua solicitação de orçamento foi enviada com sucesso. Obrigado! :)')
-    except Exception as e:
-        print(f'Houve um erro ao enviar a sua solicitação de orçamento. Erro: {e}')
+        msg = MIMEMultipart()
+        msg['From'] = email
+        msg['To'] = to
+        msg['Subject'] = subject
 
-    return redirect(request.path_info)
+        body = f"Nome: {name}\n\nEmail: {email}\n\nMensagem: {message}"
+        msg.attach(MIMEText(body, 'plain'))
+
+        try:
+            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            smtp_server.ehlo()
+            smtp_server.starttls()
+            smtp_server.login('seuemail@gmail.com', 'suasenha')
+            smtp_server.sendmail(email, to, msg.as_string())
+            smtp_server.close()
+            return render(request, 'form.html', {'success': True})
+        except Exception as e:
+            print(f'Houve um erro ao enviar o e-mail. Erro: {e}')
+            return render(request, 'form.html', {'error': True})
+
+    return render(request, 'form.html')
+
+
